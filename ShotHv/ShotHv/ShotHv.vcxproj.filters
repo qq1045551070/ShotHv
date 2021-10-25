@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Arch">
+      <UniqueIdentifier>{31538234-fec0-401f-ab98-39a8f3b646a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Arch\Intel">
+      <UniqueIdentifier>{7b4afd8e-a6ce-4d76-be20-88faa653ef24}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Arch\Amd">
+      <UniqueIdentifier>{e8f77e21-7c0e-4872-ad47-6d9a5d1f1944}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Arch\Intel\Include">
+      <UniqueIdentifier>{147f977b-cf58-430b-9e36-3075edc874e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Arch\Intel\Util">
+      <UniqueIdentifier>{4718a3c7-b3db-4e3d-a730-a390075ecf47}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Arch\Intel\Callback">
+      <UniqueIdentifier>{8863ea76-1335-4ca0-8929-8af4eef30694}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Arch\Intel\VmxExit">
+      <UniqueIdentifier>{76128edc-72e5-40ef-a42b-f8d4d183cde6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Arch\Intel\Core">
+      <UniqueIdentifier>{dc993dc0-3d56-4ee7-aaf7-f5f24be545c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Arch\Intel\Hook">
+      <UniqueIdentifier>{086a459c-8f56-429f-9490-dea3f7085424}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Arch\Intel\LDE">
+      <UniqueIdentifier>{0e3d83fb-8499-46f5-99d5-edbc90c40367}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="HvUtil.cpp">
+      <Filter>Arch\Intel\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="HvCallback.cpp">
+      <Filter>Arch\Intel\Callback</Filter>
+    </ClCompile>
+    <ClCompile Include="HvExitHandle.cpp">
+      <Filter>Arch\Intel\VmxExit</Filter>
+    </ClCompile>
+    <ClCompile Include="CoreHv.cpp">
+      <Filter>Arch\Intel\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="HvInjectException.cpp">
+      <Filter>Arch\Intel\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="HvEpt.cpp">
+      <Filter>Arch\Intel\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="PageHook.cpp">
+      <Filter>Arch\Intel\Hook</Filter>
+    </ClCompile>
+    <ClCompile Include="Lde.cpp">
+      <Filter>Arch\Intel\LDE</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="HvStruct.h">
+      <Filter>Arch\Intel\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="HvNative.h">
+      <Filter>Arch\Intel\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="HvDefine.h">
+      <Filter>Arch\Intel\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="HvPch.h">
+      <Filter>Arch\Intel\Include</Filter>
+    </ClInclude>
+    <ClInclude Include="HvUtil.h">
+      <Filter>Arch\Intel\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="HvCallback.h">
+      <Filter>Arch\Intel\Callback</Filter>
+    </ClInclude>
+    <ClInclude Include="HvExitHandle.h">
+      <Filter>Arch\Intel\VmxExit</Filter>
+    </ClInclude>
+    <ClInclude Include="CoreHv.h">
+      <Filter>Arch\Intel\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="HvInjectException.h">
+      <Filter>Arch\Intel\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="HvEpt.h">
+      <Filter>Arch\Intel\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="PageHook.h">
+      <Filter>Arch\Intel\Hook</Filter>
+    </ClInclude>
+    <ClInclude Include="Lde.h">
+      <Filter>Arch\Intel\LDE</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="x64.asm">
+      <Filter>Arch\Intel\Core</Filter>
+    </MASM>
+  </ItemGroup>
+</Project>

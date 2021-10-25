@@ -1,0 +1,18 @@
+﻿  Building 'ShotHv' with toolset 'WindowsKernelModeDriver10.0' and the 'Desktop' target platform.
+  Assembling x64.asm...
+  CoreHv.cpp
+  HvCallback.cpp
+  HvEpt.cpp
+  HvInjectException.cpp
+  Lde.cpp
+  Main.cpp
+  HvUtil.cpp
+  HvExitHandle.cpp
+  PageHook.cpp
+  正在生成代码...
+  ShotHv.vcxproj -> G:\驱动开发代码\ShotHv\x64\Debug\ShotHv.sys
+  Done Adding Additional Store
+  Successfully signed: G:\\ShotHv\x64\Debug\ShotHv.sys
+  
+  Inf2Cat task was skipped as there were no inf files to process
+  

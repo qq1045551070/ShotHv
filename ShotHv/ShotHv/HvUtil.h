@@ -1,0 +1,70 @@
+#pragma once
+
+/*
+	APC等级以下的全逻辑内核调用分发
+*/
+_IRQL_requires_max_(APC_LEVEL)
+NTSTATUS
+WINAPI
+UtilForEachProcessor(
+	_In_ NTSTATUS(*callback_routine)(void*),
+	_In_opt_ void* context
+);
+
+/*
+	DPC等级的全逻辑内核调用分发
+*/
+_IRQL_requires_max_(DISPATCH_LEVEL)
+NTSTATUS
+WINAPI
+UtilForEachProcessorDpc(
+	_In_ PKDEFERRED_ROUTINE deferred_routine,
+	_In_opt_ void* context
+);
+
+_IRQL_requires_max_(DISPATCH_LEVEL)
+VOID
+WINAPI
+UtilGetSelectorInfoBySelector(
+	ULONG_PTR selector,
+	ULONG_PTR* base,
+	ULONG_PTR* limit,
+	ULONG_PTR* attribute
+);
+
+/*
+	注册关机回调
+*/
+_IRQL_requires_max_(PASSIVE_LEVEL)
+NTSTATUS
+WINAPI
+RegisterShutdownCallBack(
+	_In_ NTSTATUS (*ShutDownCallBack)(_In_ PDEVICE_OBJECT, _In_ PIRP)
+);
+
+/*
+	卸载关机回调
+*/
+_IRQL_requires_max_(PASSIVE_LEVEL)
+NTSTATUS
+WINAPI
+UnRegisterShutdownCallBack();
+
+BOOLEAN 
+WINAPI 
+BuildShellCode1(
+	_Inout_ PHOOK_SHELLCODE1 pThunk, 
+	_In_	ULONG64 Pointer
+);
+
+ULONG64
+WINAPI
+UtilPhysicalAddressToVirtualAddress(
+	_In_ ULONG64 PhysicalAddress
+);
+
+ULONG64
+WINAPI
+UtilVirtualAddressToPhysicalAddress(
+	IN ULONG64 VrtualAddress
+);
