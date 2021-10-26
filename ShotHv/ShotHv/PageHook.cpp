@@ -44,6 +44,8 @@ PHGetHookContextByPFN(
 	for (PLIST_ENTRY pListEntry = g_PageHookList.List.Flink; pListEntry != &g_PageHookList.List; pListEntry = pListEntry->Flink)
 	{
 		PAGE_HOOK_CONTEXT* pEntry = CONTAINING_RECORD(pListEntry, PAGE_HOOK_CONTEXT, List);
+		if (FALSE == pEntry->R0Hook || !MmIsAddressValid(pEntry)) continue;
+
 		if ((Type == DATA_PAGE && pEntry->DataPagePFN == tPFN) || (Type == CODE_PAGE && pEntry->CodePagePFN == tPFN)) {
 			pRet = pEntry;
 			goto DONE;
@@ -83,6 +85,8 @@ PHGetHookContextByVA(
 	for (PLIST_ENTRY pListEntry = g_PageHookList.List.Flink; pListEntry != &g_PageHookList.List; pListEntry = pListEntry->Flink)
 	{
 		PAGE_HOOK_CONTEXT* pEntry = CONTAINING_RECORD(pListEntry, PAGE_HOOK_CONTEXT, List);
+		if (FALSE == pEntry->R0Hook || !MmIsAddressValid(pEntry)) continue;
+
 		if (pEntry->HookAddress == VA || pEntry->DetourAddress == VA) {
 			pRet = pEntry;
 			goto DONE;
@@ -122,8 +126,10 @@ PHPageHookCount(
 	for (PLIST_ENTRY pListEntry = g_PageHookList.List.Flink; pListEntry != &g_PageHookList.List; pListEntry = pListEntry->Flink)
 	{
 		PAGE_HOOK_CONTEXT* pEntry = CONTAINING_RECORD(pListEntry, PAGE_HOOK_CONTEXT, List);
+		if (FALSE == pEntry->R0Hook || !MmIsAddressValid(pEntry)) continue;
+
 		if ((Type == DATA_PAGE && pEntry->DataPageBase == PagePtr) || (Type == CODE_PAGE && pEntry->CodePageBase == PagePtr)) {
-			Count++;
+				Count++;	
 		}		
 	}
 
@@ -269,22 +275,27 @@ PHR0UnHook(
 		return STATUS_NOT_FOUND;
 	}
 	
-	// 获取函数页面Hook点次数
-	if (PHPageHookCount((ULONG64)pFunc, DATA_PAGE) > 1) {
-		KeAcquireSpinLock(&g_PageLock, &OldIrql);
-		ULONG_PTR PageOffset = (ULONG_PTR)pFunc - (ULONG_PTR)PAGE_ALIGN(pFunc);
-		memcpy((PUCHAR)HookContext->CodePageBase + PageOffset, (PVOID)HookContext->OriFunc, HookContext->HookSize);
-	}
-	else
-	{
-		KeAcquireSpinLock(&g_PageLock, &OldIrql);
+	if (HookContext->R0Hook) {
+
 		HookContext->R0Hook = FALSE;
-		ntStatus = UtilForEachProcessorDpc(PHR0HookCallbackDPC, HookContext);
+
+		// 获取函数页面Hook点次数
+		if (PHPageHookCount((ULONG64)pFunc, DATA_PAGE) > 1) {
+			KeAcquireSpinLock(&g_PageLock, &OldIrql);
+			ULONG_PTR PageOffset = (ULONG_PTR)pFunc - (ULONG_PTR)PAGE_ALIGN(pFunc);
+			memcpy((PUCHAR)HookContext->CodePageBase + PageOffset, (PVOID)HookContext->OriFunc, HookContext->HookSize);
+		}
+		else
+		{
+			KeAcquireSpinLock(&g_PageLock, &OldIrql);
+			ntStatus = UtilForEachProcessorDpc(PHR0HookCallbackDPC, HookContext);
+		}
+
+		RemoveEntryList(&HookContext->List);
+		ExFreePool((PVOID)HookContext->OriFunc);
+		ExFreePool(HookContext);
 	}
-	
-	RemoveEntryList( &HookContext->List );
-	ExFreePool( (PVOID)HookContext->OriFunc );
-	ExFreePool( HookContext );
+
 	KeReleaseSpinLock( &g_PageLock, OldIrql );
 
 	return ntStatus;
@@ -300,10 +311,19 @@ PHUnAllHook()
 #endif
 
 	NTSTATUS ntStatus = STATUS_SUCCESS;
+
+	if (IsListEmpty(&g_PageHookList.List)) {		
+		return ntStatus;
+	}
 	
-	for (PLIST_ENTRY pListEntry = g_PageHookList.List.Flink; pListEntry != &g_PageHookList.List; pListEntry = pListEntry->Flink)
+	for (PLIST_ENTRY pListEntry = g_PageHookList.List.Flink; pListEntry != &g_PageHookList.List;)
 	{
 		PAGE_HOOK_CONTEXT* pEntry = CONTAINING_RECORD(pListEntry, PAGE_HOOK_CONTEXT, List);
+
+		pListEntry = pListEntry->Flink;
+
+		if (FALSE == pEntry->R0Hook || !MmIsAddressValid(pEntry)) continue;
+
 		ntStatus = PHR0UnHook( (PVOID)pEntry->HookAddress );
 
 		if (!NT_SUCCESS(ntStatus)) {

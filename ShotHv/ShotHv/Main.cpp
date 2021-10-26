@@ -84,6 +84,17 @@ NTSTATUS NTAPI xNtOpenFile(
 	return STATUS_UNSUCCESSFUL;
 }
 
+NTSTATUS
+WINAPI
+DetourHooks()
+{ 
+	// 测试同一物理页HOOK
+	auto ntStatus = PHR0Hook(NtCreateFile, xNtCreateFile, &OriNtCreateFile);
+		 ntStatus = PHR0Hook(NtOpenFile, xNtOpenFile, &OriNtOpenFile);
+
+	return STATUS_SUCCESS;
+}
+
 NTSTATUS 
 WINAPI
 ShotHvShutDown(
@@ -140,9 +151,8 @@ DriverEntry(
 		return ntStatus;
 	}
 
-	// 测试同一物理页HOOK
-	ntStatus = PHR0Hook(NtCreateFile, xNtCreateFile, &OriNtCreateFile);
-	ntStatus = PHR0Hook(NtOpenFile, xNtOpenFile, &OriNtOpenFile);
+	// HOOK
+	ntStatus = DetourHooks();
 
 	return ntStatus;
 }

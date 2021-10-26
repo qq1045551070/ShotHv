@@ -56,6 +56,10 @@ DisableIntelVT()
 {
 	NTSTATUS ntStatus = STATUS_SUCCESS;
 
+	// 卸载所有 EPT HOOK
+	PHUnAllHook();
+
+	// 分发结束HV
 	ntStatus = UtilForEachProcessorDpc(DpcUnRunIntelHyperV, &ntStatus);
 
 	if (CoreVmxEntrys) {
@@ -286,9 +290,6 @@ UnRunIntelHyperV()
 
 	if (CoreVmxEntrys[CurrentCPU].VmxOnOFF)
 	{
-		// 卸载所有 EPT HOOK
-		PHUnAllHook();
-
 		// 退出 VT
 		HvVmCall(CallExitVt);
 		
