@@ -15,3 +15,8 @@ Win10x64 1809:
 Win7x64 Sp1
 ![image](https://user-images.githubusercontent.com/74456854/138731665-e9f3940c-dffb-48c3-8137-e98328a643cd.png)
 
+
+
+个人博客：
+http://blog.leanote.com/only_the_brave
+
