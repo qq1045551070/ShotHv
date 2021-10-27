@@ -510,7 +510,7 @@ EptViolationHandler(
 	// 判断是否与我们的HOOK有关
 	pHookEntry = PHGetHookContextByPFN( GuestPhyaddress.QuadPart, DATA_PAGE );
 	
-	if (pHookEntry)
+	if (pHookEntry && (Activiti == pHookEntry->State))
 	{
 		ULONG64 TargetPFN = pHookEntry->DataPagePFN;
 		EPT_ACCESS TargetAccess = EPT_ACCESS_ALL;

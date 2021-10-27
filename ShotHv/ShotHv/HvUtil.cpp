@@ -193,7 +193,6 @@ BuildShellCode1(
     return FALSE;
 }
 
-_Use_decl_annotations_
 ULONG64 
 WINAPI
 UtilPhysicalAddressToVirtualAddress(
@@ -206,14 +205,56 @@ UtilPhysicalAddressToVirtualAddress(
     return (UINT64)MmGetVirtualForPhysical(PhysicalAddr);
 }
 
-_Use_decl_annotations_
 ULONG64 
 WINAPI
 UtilVirtualAddressToPhysicalAddress(
-    IN ULONG64 VrtualAddress
+    _In_ ULONG64 VrtualAddress
 )
 {
     return MmGetPhysicalAddress((PVOID)VrtualAddress).QuadPart;
 }
 
+BOOLEAN 
+WINAPI
+ProbeUserAddress(
+    _In_ PVOID addr, 
+    _In_ SIZE_T size, 
+    _In_ ULONG alignment 
+)
+{
+    if (size == 0) {
+        return TRUE;
+    }
+
+    /* 校验地址是否对齐 */
+    ULONG_PTR current = (ULONG_PTR)addr;
+    if (((ULONG_PTR)addr & (alignment - 1)) != 0) {
+        return FALSE;
+    }
+
+    /* 判断是否为内核地址 */
+    ULONG_PTR last = current + size - 1;
+    if ((last < current) || (last >= (ULONG_PTR)MmHighestUserAddress/*MmUserProbeAddress*/)) {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+_Use_decl_annotations_
+BOOLEAN
+WINAPI
+SafeCopy(
+    _In_ PVOID dest, 
+    _In_ PVOID src, 
+    _In_ SIZE_T size
+)
+{
+    SIZE_T returnSize = 0;
+    if (NT_SUCCESS(MmCopyVirtualMemory(PsGetCurrentProcess(), src, PsGetCurrentProcess(), dest, size, KernelMode, &returnSize)) && returnSize == size) {
+        return TRUE;
+    }
+
+    return FALSE;
+}
 

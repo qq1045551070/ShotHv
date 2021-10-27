@@ -27,6 +27,27 @@ KeSignalCallDpcDone(
 );
 
 extern "C"
+NTKERNELAPI
+PVOID
+NTAPI
+PsGetProcessDebugPort(
+	_In_ PEPROCESS Process
+);
+
+extern "C"
+NTSTATUS 
+NTAPI 
+MmCopyVirtualMemory(
+	PEPROCESS SourceProcess, 
+	PVOID SourceAddress, 
+	PEPROCESS TargetProcess, 
+	PVOID TargetAddress, 
+	SIZE_T BufferSize, 
+	KPROCESSOR_MODE PreviousMode, 
+	PSIZE_T ReturnSize
+);
+
+extern "C"
 {
 	void  AsmStackPointer(ULONG_PTR* StackPointer);			// 获取当前Rsp
 	void  AsmNextInstructionPointer(ULONG_PTR* RipPointer);	// 获取下一指令Rip

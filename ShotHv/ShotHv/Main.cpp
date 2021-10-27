@@ -87,10 +87,15 @@ NTSTATUS NTAPI xNtOpenFile(
 NTSTATUS
 WINAPI
 DetourHooks()
-{ 
+{
 	// 测试同一物理页HOOK
 	auto ntStatus = PHR0Hook(NtCreateFile, xNtCreateFile, &OriNtCreateFile);
 		 ntStatus = PHR0Hook(NtOpenFile, xNtOpenFile, &OriNtOpenFile);
+
+	if (NT_SUCCESS(ntStatus)) {
+		// 激活所有HOOK
+		PHActivateR0Hooks();
+	}
 
 	return STATUS_SUCCESS;
 }

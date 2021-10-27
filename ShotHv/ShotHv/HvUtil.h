@@ -66,5 +66,29 @@ UtilPhysicalAddressToVirtualAddress(
 ULONG64
 WINAPI
 UtilVirtualAddressToPhysicalAddress(
-	IN ULONG64 VrtualAddress
+	_In_ ULONG64 VrtualAddress
 );
+
+/*
+	R3 地址校验
+*/
+BOOLEAN
+WINAPI
+ProbeUserAddress(
+	_In_ PVOID addr,
+	_In_ SIZE_T size,
+	_In_ ULONG alignment
+);
+
+/*
+	安全拷贝数据
+*/
+_IRQL_requires_max_(APC_LEVEL)
+BOOLEAN
+WINAPI
+SafeCopy(
+	_In_ PVOID dest,
+	_In_ PVOID src,
+	_In_ SIZE_T size
+);
+

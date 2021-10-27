@@ -1,7 +1,7 @@
 #include "HvPch.h"
 
 static KSPIN_LOCK g_PageLock = {};
-static PAGE_HOOK_CONTEXT g_PageHookList = { 0 };
+static PAGE_HOOK_CONTEXT g_PageHookList  = { 0 };
 
 _Use_decl_annotations_
 NTSTATUS
@@ -44,7 +44,7 @@ PHGetHookContextByPFN(
 	for (PLIST_ENTRY pListEntry = g_PageHookList.List.Flink; pListEntry != &g_PageHookList.List; pListEntry = pListEntry->Flink)
 	{
 		PAGE_HOOK_CONTEXT* pEntry = CONTAINING_RECORD(pListEntry, PAGE_HOOK_CONTEXT, List);
-		if (FALSE == pEntry->R0Hook || !MmIsAddressValid(pEntry)) continue;
+		if (!MmIsAddressValid(pEntry) || FALSE == pEntry->R0Hook) continue;
 
 		if ((Type == DATA_PAGE && pEntry->DataPagePFN == tPFN) || (Type == CODE_PAGE && pEntry->CodePagePFN == tPFN)) {
 			pRet = pEntry;
@@ -85,7 +85,7 @@ PHGetHookContextByVA(
 	for (PLIST_ENTRY pListEntry = g_PageHookList.List.Flink; pListEntry != &g_PageHookList.List; pListEntry = pListEntry->Flink)
 	{
 		PAGE_HOOK_CONTEXT* pEntry = CONTAINING_RECORD(pListEntry, PAGE_HOOK_CONTEXT, List);
-		if (FALSE == pEntry->R0Hook || !MmIsAddressValid(pEntry)) continue;
+		if (!MmIsAddressValid(pEntry) || FALSE == pEntry->R0Hook) continue;
 
 		if (pEntry->HookAddress == VA || pEntry->DetourAddress == VA) {
 			pRet = pEntry;
@@ -126,7 +126,7 @@ PHPageHookCount(
 	for (PLIST_ENTRY pListEntry = g_PageHookList.List.Flink; pListEntry != &g_PageHookList.List; pListEntry = pListEntry->Flink)
 	{
 		PAGE_HOOK_CONTEXT* pEntry = CONTAINING_RECORD(pListEntry, PAGE_HOOK_CONTEXT, List);
-		if (FALSE == pEntry->R0Hook || !MmIsAddressValid(pEntry)) continue;
+		if (!MmIsAddressValid(pEntry) || FALSE == pEntry->R0Hook) continue;
 
 		if ((Type == DATA_PAGE && pEntry->DataPageBase == PagePtr) || (Type == CODE_PAGE && pEntry->CodePageBase == PagePtr)) {
 				Count++;	
@@ -157,8 +157,8 @@ PHR0Hook(
 	}
 
 	NTSTATUS ntStatus = STATUS_SUCCESS;
-	PUCHAR CodePage = NULL;
-	BOOL   NewPage = TRUE;
+	PUCHAR   CodePage = NULL;
+	BOOLEAN  NewPage  = TRUE;
 	PHYSICAL_ADDRESS phys = { 0 }; phys.QuadPart = MAXULONG64;
 	HOOK_SHELLCODE1 JmpCode = { 0 };
 	HOOK_SHELLCODE1 RetCode = { 0 };
@@ -233,7 +233,10 @@ PHR0Hook(
 	pNewEntry->CodePagePFN = PFN( MmGetPhysicalAddress(CodePage).QuadPart );
 	pNewEntry->DataPageBase = (ULONG64)PAGE_ALIGN( pFunc );
 	pNewEntry->CodePageBase = (ULONG64)CodePage;
-
+	pNewEntry->NewPage = NewPage;
+	pNewEntry->State = Ready;
+	
+	// 插入到空闲链表中
 	KeAcquireSpinLock(&g_PageLock, &OldIrql);
 	InsertTailList(&g_PageHookList.List, &pNewEntry->List);
 	KeReleaseSpinLock(&g_PageLock, OldIrql);
@@ -241,11 +244,6 @@ PHR0Hook(
 	if (pOriFun)
 	{
 		*pOriFun = (PVOID)pNewEntry->OriFunc;
-	}
-
-	if (NewPage)
-	{
-		ntStatus = UtilForEachProcessorDpc(PHR0HookCallbackDPC, pNewEntry);
 	}
 
 	return ntStatus;
@@ -322,12 +320,54 @@ PHUnAllHook()
 
 		pListEntry = pListEntry->Flink;
 
-		if (FALSE == pEntry->R0Hook || !MmIsAddressValid(pEntry)) continue;
+		if (!MmIsAddressValid(pEntry) || FALSE == pEntry->R0Hook) continue;
 
 		ntStatus = PHR0UnHook( (PVOID)pEntry->HookAddress );
 
 		if (!NT_SUCCESS(ntStatus)) {
 			DBG_PRINT( "PHR0UnHook: %#p\r\n", (PVOID)pEntry->HookAddress );
+		}
+	}
+
+	return ntStatus;
+}
+
+_Use_decl_annotations_
+NTSTATUS
+WINAPI
+PHActivateR0Hooks()
+{
+#ifndef USE_HV_EPT
+	return STATUS_UNSUCCESSFUL;
+#endif
+
+	NTSTATUS ntStatus = STATUS_SUCCESS;
+
+	if (IsListEmpty(&g_PageHookList.List)) {
+		return ntStatus;
+	}
+
+	// 遍历空闲链表
+	for (PLIST_ENTRY pListEntry = g_PageHookList.List.Flink; pListEntry != &g_PageHookList.List;)
+	{
+		PAGE_HOOK_CONTEXT* pEntry = CONTAINING_RECORD(pListEntry, PAGE_HOOK_CONTEXT, List);
+
+		pListEntry = pListEntry->Flink;
+
+		if (!MmIsAddressValid(pEntry) || FALSE == pEntry->R0Hook) continue;
+		
+		// 判断该项是否为就绪状态
+		if (Ready == pEntry->State)
+		{
+			// 是的话则，激活
+			_InterlockedCompareExchange8((CHAR*)&pEntry->State, Activiti, Ready);
+
+			if (pEntry->NewPage) {
+				ntStatus = UtilForEachProcessorDpc(PHR0HookCallbackDPC, pEntry);
+				if (!NT_SUCCESS(ntStatus)) {
+					DBG_PRINT("[R0]: %#p 激活失败!\r\n", (PVOID)pEntry->HookAddress);
+				}
+			}
 		}
 	}
 

@@ -76,3 +76,11 @@ _IRQL_requires_same_
 NTSTATUS
 WINAPI
 PHUnAllHook();
+
+/*
+	激活所有就绪状态的 R0 EPT HOOK
+*/
+_IRQL_requires_max_(DISPATCH_LEVEL)
+NTSTATUS
+WINAPI
+PHActivateR0Hooks();

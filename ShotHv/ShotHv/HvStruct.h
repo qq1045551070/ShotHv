@@ -1476,12 +1476,22 @@ typedef struct _HvContextEntry
 	ULONG DynSplitCount;							// 已使用的EPT_DYNAMIC_SPLIT个数
 }HvContextEntry, * pHvContextEntry;
 
+typedef enum _PAGE_HOOK_STATE
+{
+	Ready    = 0,		// 就绪
+	Activiti = 1,		// 激活
+	Stop     = 2,		// 停止
+} PAGE_HOOK_STATE;
+
 typedef struct _PAGE_HOOK_CONTEXT
 {
-	LIST_ENTRY List;
+	LIST_ENTRY List;		// PAGE_HOOK_CONTEXT 链表
 
-	BOOLEAN R0Hook;         // TRUE to hook page, FALSE to unhook
+	BOOLEAN R0Hook;         // R0 HOOK
 	BOOLEAN R3Hook;		    // R3 HOOK
+
+	BOOLEAN NewPage;		// 是否为新页面
+	PAGE_HOOK_STATE State;  // 状态
 
 	ULONG64 DataPagePFN;    // Physical data page PFN
 	ULONG64 CodePagePFN;    // Physical code page PFN
@@ -1495,6 +1505,8 @@ typedef struct _PAGE_HOOK_CONTEXT
 	ULONG32 HookSize;		// HOOK 所需要的字节数
 
 	ULONG64 OriFunc;		// 原函数流程
+
+	PEPROCESS OwnProcess;	// R3拥有者进程
 }PAGE_HOOK_CONTEXT, * PPAGE_HOOK_CONTEXT;
 
 typedef enum _PAGE_TYPE
