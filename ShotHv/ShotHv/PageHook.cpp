@@ -10,6 +10,7 @@ PHInitlizetion()
 {
 	NTSTATUS ntStatus = STATUS_SUCCESS;
 
+	KeInitializeSpinLock(&g_PageLock);
 	InitializeListHead(&g_PageHookList.List);
 
 	return ntStatus;
@@ -140,20 +141,19 @@ DONE:
 }
 
 _Use_decl_annotations_
-NTSTATUS
+PVOID
 WINAPI
 PHR0Hook(
 	_In_	PVOID  pFunc,
-	_In_	PVOID  pHook,
-	_Inout_ PVOID* pOriFun
+	_In_	PVOID  pHook
 )
 {
 #ifndef USE_HV_EPT
-	return STATUS_UNSUCCESSFUL;
+	return NULL;
 #endif
 
-	if (!pFunc || !pHook || !pOriFun) {
-		return STATUS_INVALID_PARAMETER;
+	if (!pFunc || !pHook) {
+		return NULL;
 	}
 
 	NTSTATUS ntStatus = STATUS_SUCCESS;
@@ -169,7 +169,7 @@ PHR0Hook(
 	// 判断目标地址是否已经HOOK
 	pHookContext = PHGetHookContextByVA( (ULONG64)pFunc, DATA_PAGE );
 	if (NULL != pHookContext) {
-		return STATUS_GROUP_EXISTS;
+		return NULL;
 	}
 
 	// 检测目标页面是否已有HOOK点
@@ -183,13 +183,13 @@ PHR0Hook(
 	}
 
 	if (NULL == CodePage) {
-		return STATUS_INSUFFICIENT_RESOURCES;
+		return NULL;
 	}
 
 	// 构建PAGE HOOK CONTEXT
 	pNewEntry = (PPAGE_HOOK_CONTEXT)ExAllocatePool(NonPagedPoolNx, sizeof(PAGE_HOOK_CONTEXT));
 	if (NULL == pNewEntry) {
-		return STATUS_INSUFFICIENT_RESOURCES;
+		return NULL;
 	}
 
 	RtlSecureZeroMemory(pNewEntry, sizeof(PAGE_HOOK_CONTEXT));
@@ -204,7 +204,7 @@ PHR0Hook(
 	HookSize = GetWriteCodeLen(pFunc, sizeof(HOOK_SHELLCODE1));
 	if (!HookSize) {
 		ExFreePool(pNewEntry);
-		return STATUS_INSUFFICIENT_RESOURCES;
+		return NULL;
 	}
 
 	// 构建RET SHELL CODE
@@ -213,7 +213,7 @@ PHR0Hook(
 	// 构建ORI原函数流程
 	pNewEntry->OriFunc = (ULONG64)ExAllocatePool( NonPagedPool, HookSize + sizeof(HOOK_SHELLCODE1) );
 	if (!pNewEntry->OriFunc) {
-		return STATUS_INSUFFICIENT_RESOURCES;
+		return NULL;
 	}
 
 	RtlFillMemory( (PVOID)pNewEntry->OriFunc, HookSize + sizeof(HOOK_SHELLCODE1), 0x90 );
@@ -241,12 +241,7 @@ PHR0Hook(
 	InsertTailList(&g_PageHookList.List, &pNewEntry->List);
 	KeReleaseSpinLock(&g_PageLock, OldIrql);
 
-	if (pOriFun)
-	{
-		*pOriFun = (PVOID)pNewEntry->OriFunc;
-	}
-
-	return ntStatus;
+	return (PVOID)pNewEntry->OriFunc;
 }
 
 _Use_decl_annotations_

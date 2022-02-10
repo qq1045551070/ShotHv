@@ -3,16 +3,12 @@
   CoreHv.cpp
   HvCallback.cpp
   HvEpt.cpp
+F:\GithubData\ShotHv4\ShotHv\ShotHv\HvEpt.cpp(290,8): warning C4189: “OldIrql”: 局部变量已初始化但不引用
   HvInjectException.cpp
   Lde.cpp
-  Main.cpp
   HvUtil.cpp
   HvExitHandle.cpp
   PageHook.cpp
+F:\GithubData\ShotHv4\ShotHv\ShotHv\PageHook.cpp(159,11): warning C4189: “ntStatus”: 局部变量已初始化但不引用
   正在生成代码...
-  ShotHv.vcxproj -> G:\驱动开发代码\项目\ShotHv\ShotHv\x64\Debug\ShotHv.sys
-  Done Adding Additional Store
-  Successfully signed: G:\\\ShotHv\ShotHv\x64\Debug\ShotHv.sys
-  
-  Inf2Cat task was skipped as there were no inf files to process
-  
+  ShotHv.vcxproj -> F:\驱动开发代码\项目\lxxGameDBGWin10(备份)\x64\Debug\ShotHv.lib

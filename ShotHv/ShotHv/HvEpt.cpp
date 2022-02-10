@@ -52,6 +52,8 @@ InitlizetionHvEpt()
 		return ntStatus;
 	}
 
+	KeInitializeSpinLock(&g_HvEptLock);
+
 	DBG_PRINT("EPT ³õÊ¼»¯Íê±Ï!\r\n");
 
 	return ntStatus;
@@ -296,7 +298,7 @@ GetHvEptDynamicSplit()
 		return NULL;
 	}
 
-	KeAcquireSpinLock(&g_HvEptLock, &OldIrql);
+	//KeAcquireSpinLock(&g_HvEptLock, &OldIrql);
 	
 	for (ULONG i = 0; i < MAX_EPTHOOK_NUMBER; i++)
 	{
@@ -310,7 +312,7 @@ GetHvEptDynamicSplit()
 		}
 	}
 
-	KeReleaseSpinLock(&g_HvEptLock, OldIrql);
+	//KeReleaseSpinLock(&g_HvEptLock, OldIrql);
 
 	return pRet;
 }
