@@ -52,8 +52,6 @@ InitlizetionHvEpt()
 		return ntStatus;
 	}
 
-	KeInitializeSpinLock(&g_HvEptLock);
-
 	DBG_PRINT("EPT 初始化完毕!\r\n");
 
 	return ntStatus;
@@ -298,7 +296,7 @@ GetHvEptDynamicSplit()
 		return NULL;
 	}
 
-	//KeAcquireSpinLock(&g_HvEptLock, &OldIrql);
+	KeAcquireSpinLock(&g_HvEptLock, &OldIrql);
 	
 	for (ULONG i = 0; i < MAX_EPTHOOK_NUMBER; i++)
 	{
@@ -312,7 +310,7 @@ GetHvEptDynamicSplit()
 		}
 	}
 
-	//KeReleaseSpinLock(&g_HvEptLock, OldIrql);
+	KeReleaseSpinLock(&g_HvEptLock, OldIrql);
 
 	return pRet;
 }
@@ -350,9 +348,10 @@ EptGetEpteEntry(
 	// 获取目标PTE
 	ULONG64 PhyA = PA;
 	PEPDE_2MB Epde = EptGetPml2Entry(Table, PhyA);
-
+	
 	if (Epde && Epde->LargePage) {
-		PEPT_DYNAMIC_SPLIT Dynentry = GetHvEptDynamicSplit();
+		//PEPT_DYNAMIC_SPLIT Dynentry = GetHvEptDynamicSplit();
+		PEPT_DYNAMIC_SPLIT Dynentry = (EPT_DYNAMIC_SPLIT*)ExAllocatePool(NonPagedPoolNx, sizeof(EPT_DYNAMIC_SPLIT));
 		if (!Dynentry || !EptSplitLargePage(Epde, Dynentry)) {
 			if (Dynentry) {
 				ExFreePool(Dynentry);

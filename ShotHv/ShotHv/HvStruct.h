@@ -9,6 +9,22 @@ typedef struct _vCpuId
 	ULONG32 edx;
 }CpuId, * pCpuId;
 
+typedef struct _InvpCid
+{
+	ULONG64 scale : 2;
+	ULONG64 und : 5;
+	ULONG64 addrssSize : 3;
+	ULONG64 rev1 : 1;
+	ULONG64 und2 : 4;
+	ULONG64 segement : 3;
+	ULONG64 index : 4;
+	ULONG64 indexInvaild : 1;
+	ULONG64 base : 4;
+	ULONG64 baseInvaild : 1;
+	ULONG64 regOpt : 4;
+	ULONG64 un3 : 32;
+}InvpCid, * pInvpCid;
+
 // See: Feature Information Returned in the ECX Register (白皮书 3-212)
 // CPUID: RAX 为 1 时, RCX 的定义
 typedef union _CpuidFeatureByEcx

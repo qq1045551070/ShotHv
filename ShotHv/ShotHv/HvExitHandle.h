@@ -14,5 +14,6 @@ extern "C"
 	void RdtscVtExitHandler(_In_ GuestReg* Registers);				// Rdtsc 处理器
 	void RdtscpVtExitHandler(_In_ GuestReg* Registers);				// Rdtsc 处理器
 	void CrAccessVtExitHandler(_In_ GuestReg* Registers);			// Crx 处理器
+	void ExitInvpcidVtExitHandler(_In_ GuestReg* Registers);		// ExitInvpcid 处理器
 }
 

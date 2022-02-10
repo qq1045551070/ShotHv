@@ -61,6 +61,9 @@ extern "C"
 		case ExitInvd:
 			__wbinvd();
 			break;
+		case ExitInvpcid:			// 服务器可能会用到
+			ExitInvpcidVtExitHandler(Registers);
+			break;
 		case ExitVmclear:			// 不实现VT指令, 拒绝 VT 嵌套
 		case ExitVmptrld:
 		case ExitVmptrst:
@@ -430,6 +433,65 @@ extern "C"
 		}
 
 		// 走默认流程
+		DefaultVmExitHandler(Registers);
+	}
+
+	void ExitInvpcidVtExitHandler(_In_ GuestReg* Registers)
+	{
+		ULONG64 mrsp = 0;
+		ULONG64 instinfo = 0;
+		ULONG64 qualification = 0;
+		__vmx_vmread(VMX_INSTRUCTION_INFO, &instinfo); //指令详细信息
+		__vmx_vmread(EXIT_QUALIFICATION, &qualification); //偏移量
+		__vmx_vmread(GUEST_RSP, &mrsp);
+
+		pInvpCid pinfo = (pInvpCid)&instinfo;
+
+		ULONG64 base = 0;
+		ULONG64 index = 0;
+		ULONG64 scale = pinfo->scale ? 2 ^ pinfo->scale : 0;
+		ULONG64 addr = 0;
+		ULONG64 regopt = ((PULONG64)Registers)[pinfo->regOpt];;
+
+		if (!pinfo->baseInvaild)
+		{
+			if (pinfo->base == 4)
+			{
+				base = mrsp;
+			}
+			else
+			{
+				base = ((PULONG64)Registers)[pinfo->base];
+			}
+		}
+
+		if (!pinfo->indexInvaild)
+		{
+			if (pinfo->index == 4)
+			{
+				index = mrsp;
+			}
+			else
+			{
+				index = ((PULONG64)Registers)[pinfo->index];
+			}
+		}
+
+		if (pinfo->addrssSize == 0)
+		{
+			addr = *(PSHORT)(base + index * scale + qualification);
+		}
+		else if (pinfo->addrssSize == 1)
+		{
+			addr = *(PULONG)(base + index * scale + qualification);
+		}
+		else
+		{
+			addr = *(PULONG64)(base + index * scale + qualification);
+		}
+
+		_invpcid((UINT)regopt, &addr);
+		
 		DefaultVmExitHandler(Registers);
 	}
 

@@ -47,11 +47,12 @@ PHPageHookCount(
 _IRQL_requires_max_(APC_LEVEL)
 _IRQL_requires_min_(PASSIVE_LEVEL)
 _IRQL_requires_same_
-PVOID 
+NTSTATUS 
 WINAPI
 PHR0Hook(
 	_In_	PVOID  pFunc, 
-	_In_	PVOID  pHook
+	_In_	PVOID  pHook,
+	_Inout_ PVOID* pOriFun
 );
 
 /*

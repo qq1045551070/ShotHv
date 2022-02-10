@@ -10,7 +10,6 @@ PHInitlizetion()
 {
 	NTSTATUS ntStatus = STATUS_SUCCESS;
 
-	KeInitializeSpinLock(&g_PageLock);
 	InitializeListHead(&g_PageHookList.List);
 
 	return ntStatus;
@@ -25,7 +24,7 @@ PHGetHookContextByPFN(
 )
 {
 #ifndef USE_HV_EPT
-	return STATUS_UNSUCCESSFUL;
+	return NULL;
 #endif
 
 	PPAGE_HOOK_CONTEXT pRet = NULL;
@@ -68,7 +67,7 @@ PHGetHookContextByVA(
 )
 {
 #ifndef USE_HV_EPT
-	return STATUS_UNSUCCESSFUL;
+	return NULL;
 #endif
 
 	UNREFERENCED_PARAMETER(Type);
@@ -141,19 +140,20 @@ DONE:
 }
 
 _Use_decl_annotations_
-PVOID
+NTSTATUS
 WINAPI
 PHR0Hook(
 	_In_	PVOID  pFunc,
-	_In_	PVOID  pHook
+	_In_	PVOID  pHook,
+	_Inout_ PVOID* pOriFun
 )
 {
 #ifndef USE_HV_EPT
-	return NULL;
+	return STATUS_UNSUCCESSFUL;
 #endif
 
-	if (!pFunc || !pHook) {
-		return NULL;
+	if (!pFunc || !pHook || !pOriFun) {
+		return STATUS_INVALID_PARAMETER;
 	}
 
 	NTSTATUS ntStatus = STATUS_SUCCESS;
@@ -169,7 +169,7 @@ PHR0Hook(
 	// 判断目标地址是否已经HOOK
 	pHookContext = PHGetHookContextByVA( (ULONG64)pFunc, DATA_PAGE );
 	if (NULL != pHookContext) {
-		return NULL;
+		return STATUS_GROUP_EXISTS;
 	}
 
 	// 检测目标页面是否已有HOOK点
@@ -183,13 +183,13 @@ PHR0Hook(
 	}
 
 	if (NULL == CodePage) {
-		return NULL;
+		return STATUS_INSUFFICIENT_RESOURCES;
 	}
 
 	// 构建PAGE HOOK CONTEXT
 	pNewEntry = (PPAGE_HOOK_CONTEXT)ExAllocatePool(NonPagedPoolNx, sizeof(PAGE_HOOK_CONTEXT));
 	if (NULL == pNewEntry) {
-		return NULL;
+		return STATUS_INSUFFICIENT_RESOURCES;
 	}
 
 	RtlSecureZeroMemory(pNewEntry, sizeof(PAGE_HOOK_CONTEXT));
@@ -204,7 +204,7 @@ PHR0Hook(
 	HookSize = GetWriteCodeLen(pFunc, sizeof(HOOK_SHELLCODE1));
 	if (!HookSize) {
 		ExFreePool(pNewEntry);
-		return NULL;
+		return STATUS_INSUFFICIENT_RESOURCES;
 	}
 
 	// 构建RET SHELL CODE
@@ -213,7 +213,7 @@ PHR0Hook(
 	// 构建ORI原函数流程
 	pNewEntry->OriFunc = (ULONG64)ExAllocatePool( NonPagedPool, HookSize + sizeof(HOOK_SHELLCODE1) );
 	if (!pNewEntry->OriFunc) {
-		return NULL;
+		return STATUS_INSUFFICIENT_RESOURCES;
 	}
 
 	RtlFillMemory( (PVOID)pNewEntry->OriFunc, HookSize + sizeof(HOOK_SHELLCODE1), 0x90 );
@@ -241,7 +241,12 @@ PHR0Hook(
 	InsertTailList(&g_PageHookList.List, &pNewEntry->List);
 	KeReleaseSpinLock(&g_PageLock, OldIrql);
 
-	return (PVOID)pNewEntry->OriFunc;
+	if (pOriFun)
+	{
+		*pOriFun = (PVOID)pNewEntry->OriFunc;
+	}
+
+	return ntStatus;
 }
 
 _Use_decl_annotations_
