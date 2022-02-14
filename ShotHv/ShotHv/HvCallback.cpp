@@ -72,6 +72,9 @@ PHR0HookCallbackDPC(
 
 	if (pHookEntry)
 	{
-		HvVmCall(pHookEntry->R0Hook ? CallHookPage : CallUnHookPage, pHookEntry->HookAddress, pHookEntry->CodePagePFN, 0);
+		HvVmCall(pHookEntry->R0Hook ? CallHookPage : CallUnHookPage, 
+			pHookEntry->HookAddress, 
+			pHookEntry->R0Hook ? pHookEntry->CodePagePFN : pHookEntry->DataPagePFN,
+			0);
 	}
 }
