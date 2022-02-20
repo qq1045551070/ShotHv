@@ -9,7 +9,8 @@ WINAPI
 PHInitlizetion()
 {
 	NTSTATUS ntStatus = STATUS_SUCCESS;
-
+	
+	KeInitializeSpinLock(&g_PageLock);
 	InitializeListHead(&g_PageHookList.List);
 
 	return ntStatus;
