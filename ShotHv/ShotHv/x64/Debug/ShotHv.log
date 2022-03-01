@@ -13,9 +13,9 @@
   Ssdt.cpp
   正在生成代码...
   Main.cpp
-  ShotHv.vcxproj -> F:\驱动开发代码\项目\ShotHv\HelloWorld\Test\ShotHv\x64\Debug\ShotHv.sys
+  ShotHv.vcxproj -> F:\GithubData\ShotHv4\ShotHv\x64\Debug\ShotHv.sys
   Done Adding Additional Store
-  Successfully signed: F:\\\ShotHv\HelloWorld\Test\ShotHv\x64\Debug\ShotHv.sys
+  Successfully signed: F:\GithubData\ShotHv4\ShotHv\x64\Debug\ShotHv.sys
   
   Inf2Cat task was skipped as there were no inf files to process
   
