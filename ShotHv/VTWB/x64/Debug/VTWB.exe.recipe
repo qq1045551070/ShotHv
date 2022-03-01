@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ProjectOutputs>
+    <ProjectOutput>
+      <FullPath>F:\驱动开发代码\项目\ShotHv\HelloWorld\Test\ShotHv\x64\Debug\ShotHv.sys</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>F:\驱动开发代码\项目\ShotHv\HelloWorld\Test\ShotHv\x64\Debug\VTWB.exe</FullPath>
+    </ProjectOutput>
+  </ProjectOutputs>
+  <ContentFiles />
+  <SatelliteDlls />
+  <NonRecipeFileRefs />
+</Project>
