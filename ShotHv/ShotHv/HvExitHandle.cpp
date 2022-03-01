@@ -90,6 +90,20 @@ extern "C"
 			DBG_PRINT("未知的 VM_EIXT 原因:0x%x\n", dwExitReason.all);
 			break;
 		}
+
+		// 防VMP检测
+		GuestRflag.all = VmxCsRead(GUEST_RFLAGS);
+		if (GuestRflag.fields.tf)
+		{
+			ULONG64 info = 0;
+
+			// 注入一个硬件调试中断
+			InjectInterruption(kHardwareException, EXCEPTION_VECTOR_DEBUG, false, 0);
+			info = VmxCsRead(GUEST_INTERRUPTIBILITY_INFO);
+			info &= ~2;
+			VmxCsWrite(GUEST_INTERRUPTIBILITY_INFO, info);
+		}
+
 		return;
 	}
 
@@ -212,24 +226,42 @@ extern "C"
 		case CallHookPage:		// R0 HOOK
 		{
 			auto pHvContext = GetHvContextEntry();
+
+			ULONG64 Cr3 = Registers->R9;
+			ULONG64 CurCr3 = __readcr3();
+
+			__writecr3(Cr3);
+
 			EptUpdateTable(
 				pHvContext->VmxEpt,
 				EPT_ACCESS_EXEC,
 				MmGetPhysicalAddress((PVOID)Registers->Rdx).QuadPart,
 				Registers->R8
 			);
+
+			__writecr3(CurCr3);
+
 			__invept(INV_ALL_CONTEXTS, &pHvContext->VmxEptp.Flags);
 		}
 		break;
 		case CallUnHookPage:	// R0 UNHOOK
 		{
 			auto pHvContext = GetHvContextEntry();
+
+			ULONG64 Cr3 = Registers->R9;
+			ULONG64 CurCr3 = __readcr3();
+
+			__writecr3(Cr3);
+
 			EptUpdateTable(
 				pHvContext->VmxEpt,
 				EPT_ACCESS_ALL,
 				MmGetPhysicalAddress((PVOID)Registers->Rdx).QuadPart,
 				Registers->R8
 			);
+
+			__writecr3(CurCr3);
+
 			__invept(INV_ALL_CONTEXTS, &pHvContext->VmxEptp.Flags);
 		}
 		break;
@@ -406,25 +438,11 @@ extern "C"
 		switch (CrxQualification.Bits.access_type) {
 		case MovCrAccessType::kMoveToCr: {
 			switch (CrxQualification.Bits.crn) {
-			case 0:
-			{
-				const Cr0Type cr0_fixed0 = { VmxCsRead(IA32_VMX_CR0_FIXED0) };
-				const Cr0Type cr0_fixed1 = { VmxCsRead(IA32_VMX_CR0_FIXED1) };
-				Cr0Type cr0 = { pRegisters[CrxQualification.Bits.gp_register] };
-				cr0.all &= cr0_fixed1.all;
-				cr0.all |= cr0_fixed0.all;
-				VmxCsWrite(GUEST_CR0, cr0.all);
-				VmxCsWrite(CR0_READ_SHADOW, cr0.all);
-				break;
-			}
-			case 4: {
-				const Cr4Type cr4_fixed0 = { VmxCsRead(IA32_VMX_CR4_FIXED0) };
-				const Cr4Type cr4_fixed1 = { VmxCsRead(IA32_VMX_CR4_FIXED1) };
-				Cr4Type cr4 = { pRegisters[CrxQualification.Bits.gp_register] };
-				cr4.all &= cr4_fixed1.all;
-				cr4.all |= cr4_fixed0.all;
-				VmxCsWrite(GUEST_CR4, cr4.all);
-				VmxCsWrite(CR4_READ_SHADOW, cr4.all);
+			case 3:
+			{		
+				ULONG64 cr3 = { pRegisters[CrxQualification.Bits.gp_register] };			
+				cr3 = (cr3 & ~(1ULL << 63));
+				VmxCsWrite(GUEST_CR3, cr3);
 				break;
 			}
 			}
@@ -441,8 +459,8 @@ extern "C"
 		ULONG64 mrsp = 0;
 		ULONG64 instinfo = 0;
 		ULONG64 qualification = 0;
-		__vmx_vmread(VMX_INSTRUCTION_INFO, &instinfo); //指令详细信息
-		__vmx_vmread(EXIT_QUALIFICATION, &qualification); //偏移量
+		__vmx_vmread(VMX_INSTRUCTION_INFO, &instinfo);	  // 指令详细信息
+		__vmx_vmread(EXIT_QUALIFICATION, &qualification); // 偏移量
 		__vmx_vmread(GUEST_RSP, &mrsp);
 
 		pInvpCid pinfo = (pInvpCid)&instinfo;

@@ -29,10 +29,14 @@ DetourHooks()
 {
 	PVOID Address = PsLookupProcessByProcessId;
 
-	auto ntStatus = PHR0Hook(Address, xPsLookupProcessByProcessId, &OriPsLookupProcessByProcessId);
+	auto ntStatus = PHHook(Address, xPsLookupProcessByProcessId, &OriPsLookupProcessByProcessId);
+	
+	//UCHAR int3 = { 0xCC };
+	//
+	//auto ntStatus = PHHideMem(Address, &int3, 1);
 
 	if (NT_SUCCESS(ntStatus))
-		PHActivateR0Hooks();
+		PHActivateHooks();
 
 	return;
 }
@@ -65,6 +69,8 @@ DriverUnload(
 	DisableIntelVT();
 
 	UnRegisterShutdownCallBack();
+
+	UnInitKernelComm(DriverObject);
 }
 
 NTSTATUS 
@@ -80,7 +86,7 @@ DriverEntry(
 	NTSTATUS ntStatus = STATUS_SUCCESS;
 
 	DriverObject->DriverUnload = DriverUnload;
-
+	
 	// 注册关机回调
 	ntStatus = RegisterShutdownCallBack(ShotHvShutDown);
 	if (!NT_SUCCESS(ntStatus)) {
@@ -93,6 +99,8 @@ DriverEntry(
 		return ntStatus;
 	}
 	
+	ntStatus = InitKernelComm(DriverObject);
+
 	DetourHooks();
 
 	return ntStatus;

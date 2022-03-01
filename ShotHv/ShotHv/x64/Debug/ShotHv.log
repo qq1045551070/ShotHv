@@ -1,13 +1,16 @@
 ﻿  Building 'ShotHv' with toolset 'WindowsKernelModeDriver10.0' and the 'Desktop' target platform.
   Assembling x64.asm...
+  HvComm.cpp
   CoreHv.cpp
   HvCallback.cpp
   HvEpt.cpp
   HvInjectException.cpp
+  HvMemory.cpp
   Lde.cpp
   HvUtil.cpp
   HvExitHandle.cpp
   PageHook.cpp
+  Ssdt.cpp
   正在生成代码...
   Main.cpp
   ShotHv.vcxproj -> F:\驱动开发代码\项目\ShotHv\HelloWorld\Test\ShotHv\x64\Debug\ShotHv.sys

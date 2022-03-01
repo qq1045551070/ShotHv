@@ -32,7 +32,7 @@ _IRQL_requires_(DISPATCH_LEVEL)
 _IRQL_requires_same_
 VOID
 WINAPI
-PHR0HookCallbackDPC(
+PHHookCallbackDPC(
 	_In_ PRKDPC Dpc,
 	_In_ PVOID Context,
 	_In_ PVOID SystemArgument1,

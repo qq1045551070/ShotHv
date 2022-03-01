@@ -31,6 +31,9 @@
     <Filter Include="Arch\Intel\LDE">
       <UniqueIdentifier>{0e3d83fb-8499-46f5-99d5-edbc90c40367}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Arch\Intel\Comm">
+      <UniqueIdentifier>{39b47b72-f18f-438f-b793-0c98697e77fa}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
@@ -57,6 +60,15 @@
     </ClCompile>
     <ClCompile Include="Lde.cpp">
       <Filter>Arch\Intel\LDE</Filter>
+    </ClCompile>
+    <ClCompile Include="HvComm.cpp">
+      <Filter>Arch\Intel\Comm</Filter>
+    </ClCompile>
+    <ClCompile Include="HvMemory.cpp">
+      <Filter>Arch\Intel\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="Ssdt.cpp">
+      <Filter>Arch\Intel\Util</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -95,6 +107,15 @@
     </ClInclude>
     <ClInclude Include="Lde.h">
       <Filter>Arch\Intel\LDE</Filter>
+    </ClInclude>
+    <ClInclude Include="HvComm.h">
+      <Filter>Arch\Intel\Comm</Filter>
+    </ClInclude>
+    <ClInclude Include="HvMemory.h">
+      <Filter>Arch\Intel\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Ssdt.h">
+      <Filter>Arch\Intel\Util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -48,6 +48,20 @@ MmCopyVirtualMemory(
 );
 
 extern "C"
+void* 
+NTAPI
+PsGetProcessWow64Process(PEPROCESS Process);
+
+extern "C"
+NTSTATUS ZwQuerySystemInformation(ULONG InfoClass, PVOID Buffer, ULONG Length, PULONG ReturnLength);
+
+extern "C"
+{
+	extern POBJECT_TYPE* IoDriverObjectType;
+	extern PSHORT NtBuildNumber;
+}
+
+extern "C"
 {
 	void  AsmStackPointer(ULONG_PTR* StackPointer);			// 获取当前Rsp
 	void  AsmNextInstructionPointer(ULONG_PTR* RipPointer);	// 获取下一指令Rip

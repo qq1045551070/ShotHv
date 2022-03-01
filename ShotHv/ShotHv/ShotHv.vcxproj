@@ -149,11 +149,13 @@
     <FilesToPackage Include="$(TargetPath)" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="HvComm.h" />
     <ClInclude Include="CoreHv.h" />
     <ClInclude Include="HvCallback.h" />
     <ClInclude Include="HvDefine.h" />
     <ClInclude Include="HvEpt.h" />
     <ClInclude Include="HvInjectException.h" />
+    <ClInclude Include="HvMemory.h" />
     <ClInclude Include="HvNative.h" />
     <ClInclude Include="HvPch.h" />
     <ClInclude Include="HvStruct.h" />
@@ -161,12 +163,15 @@
     <ClInclude Include="HvExitHandle.h" />
     <ClInclude Include="Lde.h" />
     <ClInclude Include="PageHook.h" />
+    <ClInclude Include="Ssdt.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="HvComm.cpp" />
     <ClCompile Include="CoreHv.cpp" />
     <ClCompile Include="HvCallback.cpp" />
     <ClCompile Include="HvEpt.cpp" />
     <ClCompile Include="HvInjectException.cpp" />
+    <ClCompile Include="HvMemory.cpp" />
     <ClCompile Include="Lde.cpp" />
     <ClCompile Include="Main.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
@@ -174,6 +179,7 @@
     <ClCompile Include="HvUtil.cpp" />
     <ClCompile Include="HvExitHandle.cpp" />
     <ClCompile Include="PageHook.cpp" />
+    <ClCompile Include="Ssdt.cpp" />
   </ItemGroup>
   <ItemGroup>
     <MASM Include="x64.asm" />

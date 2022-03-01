@@ -42,33 +42,33 @@ PHPageHookCount(
 );
 
 /*
-	R0 EPT HOOK
+	EPT HOOK
 */
 _IRQL_requires_max_(APC_LEVEL)
 _IRQL_requires_min_(PASSIVE_LEVEL)
 _IRQL_requires_same_
 NTSTATUS 
 WINAPI
-PHR0Hook(
+PHHook(
 	_In_	PVOID  pFunc, 
 	_In_	PVOID  pHook,
 	_Inout_ PVOID* pOriFun
 );
 
 /*
-	R0 EPT UNHOOK
+	EPT UNHOOK
 */
 _IRQL_requires_max_(DISPATCH_LEVEL)
 _IRQL_requires_min_(PASSIVE_LEVEL)
 _IRQL_requires_same_
 NTSTATUS
 WINAPI
-PHR0UnHook(
+PHUnHook(
 	_In_ PVOID pFunc
 );
 
 /*
-	ALL R0 EPT UNHOOK
+	ALL EPT UNHOOK
 */
 _IRQL_requires_max_(DISPATCH_LEVEL)
 _IRQL_requires_min_(PASSIVE_LEVEL)
@@ -78,9 +78,43 @@ WINAPI
 PHUnAllHook();
 
 /*
-	激活所有就绪状态的 R0 EPT HOOK
+	激活所有就绪状态的 EPT HOOK
 */
 _IRQL_requires_max_(DISPATCH_LEVEL)
 NTSTATUS
 WINAPI
-PHActivateR0Hooks();
+PHActivateHooks();
+
+/*
+	修改 EPT HOOK STATE
+*/
+_IRQL_requires_max_(DISPATCH_LEVEL)
+NTSTATUS
+WINAPI
+PHUpdateHookState(
+	_In_ PVOID	 pFunc,
+	_In_ ULONG64 State
+);
+
+/*
+	隐藏内存CODE
+*/
+_IRQL_requires_max_(DISPATCH_LEVEL)
+NTSTATUS
+WINAPI
+PHHideMem(
+	_In_ PVOID Address,
+	_In_ PVOID Code, 
+	_In_ ULONG Size
+);
+
+/*
+	获取目标Cr3
+*/
+_IRQL_requires_max_(DISPATCH_LEVEL)
+ULONG64
+WINAPI
+PHGetHookCr3(
+	_In_ PEPROCESS Process,
+	_In_ BOOL IsKernel
+);

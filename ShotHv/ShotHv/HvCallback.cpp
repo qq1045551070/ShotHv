@@ -57,7 +57,7 @@ DpcUnRunIntelHyperV(
 _Use_decl_annotations_
 VOID
 WINAPI
-PHR0HookCallbackDPC(
+PHHookCallbackDPC(
 	_In_ PRKDPC Dpc,
 	_In_ PVOID Context,
 	_In_ PVOID SystemArgument1,
@@ -72,9 +72,19 @@ PHR0HookCallbackDPC(
 
 	if (pHookEntry)
 	{
-		HvVmCall(pHookEntry->R0Hook ? CallHookPage : CallUnHookPage, 
-			pHookEntry->HookAddress, 
-			pHookEntry->R0Hook ? pHookEntry->CodePagePFN : pHookEntry->DataPagePFN,
-			0);
+		if (Stop == pHookEntry->State)
+		{
+			HvVmCall(CallUnHookPage,
+				pHookEntry->HookAddress,
+				pHookEntry->DataPagePFN,
+				pHookEntry->Cr3);
+		}
+		else
+		{
+			HvVmCall(pHookEntry->Hook ? CallHookPage : CallUnHookPage,
+				pHookEntry->HookAddress,
+				pHookEntry->Hook ? pHookEntry->CodePagePFN : pHookEntry->DataPagePFN,
+				pHookEntry->Cr3);
+		}	
 	}
 }

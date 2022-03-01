@@ -17,15 +17,19 @@
 #include <basetsd.h>
 
 #include "Lde.h"
+#include "Ssdt.h"
 
 #include "HvDefine.h"
 #include "HvStruct.h"
 #include "HvNative.h"
 
 #include "HvUtil.h"
+#include "HvMemory.h"
 #include "HvCallback.h"
 #include "HvInjectException.h"
 #include "HvExitHandle.h"
 #include "HvEpt.h"
 #include "PageHook.h"
 #include "CoreHv.h"
+
+#include "HvComm.h"

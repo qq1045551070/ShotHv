@@ -20,14 +20,15 @@ CheckHvEptSupported()
 
 	if (!VpidRegister.fields.support_page_walk_length4
 		|| !VpidRegister.fields.support_write_back_memory_type
-		|| !VpidRegister.fields.support_pde_2mb_pages)
+		|| !VpidRegister.fields.support_pde_2mb_pages
+		|| !VpidRegister.fields.support_execute_only_pages)
 	{
-		return STATUS_UNSUCCESSFUL;
+		return STATUS_NOT_SUPPORTED;
 	}
 
 	if (!MTRRDefType.MtrrEnable)
 	{
-		return STATUS_UNSUCCESSFUL;
+		return STATUS_NOT_SUPPORTED;
 	}
 
 	return STATUS_SUCCESS;
@@ -507,7 +508,7 @@ EptViolationHandler(
 
 	// 获取当前核的 HvContextEntry
 	pContextEntry = GetHvContextEntry();
-
+	
 	// 判断是否与我们的HOOK有关
 	pHookEntry = PHGetHookContextByPFN( GuestPhyaddress.QuadPart, DATA_PAGE );
 	
@@ -534,6 +535,7 @@ EptViolationHandler(
 		else
 		{
 			DBG_PRINT( "未知的EptViolation!\r\n" );
+			//KeBugCheck(POWER_FAILURE_SIMULATE); // 强制重启
 		}
 
 		EptUpdateTable( pContextEntry->VmxEpt, TargetAccess, GuestPhyaddress.QuadPart, TargetPFN );

@@ -50,11 +50,12 @@ NTSTATUS
 WINAPI
 UnRegisterShutdownCallBack();
 
-BOOLEAN 
-WINAPI 
+BOOLEAN
+WINAPI
 BuildShellCode1(
-	_Inout_ PHOOK_SHELLCODE1 pThunk, 
-	_In_	ULONG64 Pointer
+	_Inout_ PHOOK_SHELLCODE1 pThunk,
+	_In_	ULONG64 Pointer,
+	_In_    BOOLEAN isX64
 );
 
 ULONG64
@@ -81,6 +82,18 @@ ProbeUserAddress(
 );
 
 /*
+	R0 地址校验
+*/
+_IRQL_requires_max_(PASSIVE_LEVEL)
+BOOL
+WINAPI
+ProbeKernelAddress(
+	_In_ PVOID  addr,
+	_In_ SIZE_T size,
+	_In_ ULONG  alignment
+);
+
+/*
 	安全拷贝数据
 */
 _IRQL_requires_max_(APC_LEVEL)
@@ -92,3 +105,24 @@ SafeCopy(
 	_In_ SIZE_T size
 );
 
+/*
+	设置先前模式
+*/
+_IRQL_requires_max_(PASSIVE_LEVEL)
+KPROCESSOR_MODE
+WINAPI
+KeSetPreviousMode(
+	_In_ KPROCESSOR_MODE Mode
+);
+
+_IRQL_requires_max_(PASSIVE_LEVEL)
+ULONG_PTR
+WINAPI
+QueryKernelModule(
+	_In_	PUCHAR moduleName,
+	_Inout_ ULONG_PTR* moduleSize
+);
+
+DWORD
+WINAPI
+GetUserCr3Offset();

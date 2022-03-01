@@ -3,6 +3,37 @@
 // NULL的设备对象
 static PDEVICE_OBJECT  g_NullDeviceObject = NULL;
 
+ULONG GetThreadModeOffset()
+{
+    static ULONG offset = 0;
+    if (offset)  return offset;
+    UNICODE_STRING funcName = { 0 };
+    RtlInitUnicodeString(&funcName, L"ExGetPreviousMode");
+    PUCHAR func = (PUCHAR)MmGetSystemRoutineAddress(&funcName);
+    if (func == NULL) return 0;
+    PUCHAR temp = func;
+
+    for (int i = 10; i < 50; i++)
+    {
+        if (temp[i] == 0xC3)
+        {
+            if (temp[i + 1] == 0x90 || temp[i + 1] == 0x0 || temp[i + 1] == 0xcc)
+            {
+                temp += i;
+                break;
+            }
+        }
+    }
+
+    if (temp != func)
+    {
+        temp -= 4;
+        offset = *(PULONG)temp;
+    }
+
+    return offset;
+}
+
 _Use_decl_annotations_
 NTSTATUS
 WINAPI
@@ -169,7 +200,8 @@ BOOLEAN
 WINAPI
 BuildShellCode1(
     _Inout_ PHOOK_SHELLCODE1 pThunk,
-    _In_	ULONG64 Pointer
+    _In_	ULONG64 Pointer,
+    _In_    BOOLEAN isX64
 )
 {
     if (pThunk)
@@ -177,11 +209,22 @@ BuildShellCode1(
         PULARGE_INTEGER liTo = (PULARGE_INTEGER)&Pointer;
 
         __try {
-            pThunk->PushOp = 0x68;
-            pThunk->AddressLow = liTo->LowPart;
-            pThunk->MovOp = 0x042444C7;
-            pThunk->AddressHigh = liTo->HighPart;
-            pThunk->RetOp = 0xC3;
+            if (isX64)
+            {
+                pThunk->PushOp = 0x68;
+                pThunk->AddressLow = liTo->LowPart;
+                pThunk->MovOp = 0x042444C7;
+                pThunk->AddressHigh = liTo->HighPart;
+                pThunk->RetOp = 0xC3;
+            }
+            else
+            {
+                pThunk->PushOp = 0x68;
+                pThunk->AddressLow = liTo->LowPart;
+                pThunk->MovOp = 0x90909090;
+                pThunk->AddressHigh = 0x90909090;
+                pThunk->RetOp = 0xC3;
+            }
         }
         __except (EXCEPTION_EXECUTE_HANDLER) {
             return FALSE;
@@ -229,12 +272,40 @@ ProbeUserAddress(
     /* 校验地址是否对齐 */
     ULONG_PTR current = (ULONG_PTR)addr;
     if (((ULONG_PTR)addr & (alignment - 1)) != 0) {
-        return FALSE;
+        __debugbreak();
     }
 
     /* 判断是否为内核地址 */
     ULONG_PTR last = current + size - 1;
     if ((last < current) || (last >= (ULONG_PTR)MmHighestUserAddress/*MmUserProbeAddress*/)) {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+_Use_decl_annotations_
+BOOL
+WINAPI
+ProbeKernelAddress(
+    _In_ PVOID addr,
+    _In_ SIZE_T size,
+    _In_ ULONG alignment
+)
+{
+    if (size == 0) {
+        return TRUE;
+    }
+
+    /* 校验地址是否对齐 */
+    ULONG_PTR current = (ULONG_PTR)addr;
+    if (((ULONG_PTR)addr & (alignment - 1)) != 0) {
+        __debugbreak();
+    }
+
+    /* 判断是否为用户地址 */
+    ULONG_PTR last = current + size - 1;
+    if ((last < current) || (last <= (ULONG_PTR)MmHighestUserAddress/*MmUserProbeAddress*/)) {
         return FALSE;
     }
 
@@ -258,3 +329,141 @@ SafeCopy(
     return FALSE;
 }
 
+_Use_decl_annotations_
+KPROCESSOR_MODE
+WINAPI
+KeSetPreviousMode(
+    _In_ KPROCESSOR_MODE Mode
+)
+{
+    ULONG offset = GetThreadModeOffset();
+    KPROCESSOR_MODE old = ExGetPreviousMode();
+    *(KPROCESSOR_MODE*)((PBYTE)KeGetCurrentThread() + offset) = Mode;
+    return old;
+}
+
+/*
+    See: 目标模块名称，获取指定模块信息
+    RETURN: 返回目标模块BASE
+*/
+_Use_decl_annotations_
+ULONG_PTR
+WINAPI
+QueryKernelModule(
+    _In_	PUCHAR moduleName, 		   // 目标模块名称
+    _Inout_ ULONG_PTR* moduleSize	   // 返回目标模块大小
+)
+{
+    if (moduleName == NULL) return 0;
+
+    RTL_PROCESS_MODULES rtlMoudles = { 0 };
+    PRTL_PROCESS_MODULES SystemMoudles = &rtlMoudles;
+    BOOLEAN isAllocate = FALSE;
+    // 测量长度
+    ULONG retLen = 0;
+    NTSTATUS status = ZwQuerySystemInformation(SystemModuleInformation, SystemMoudles, sizeof(RTL_PROCESS_MODULES), &retLen);
+
+    // 分配实际长度内存
+    if (status == STATUS_INFO_LENGTH_MISMATCH)
+    {
+        SystemMoudles = (PRTL_PROCESS_MODULES)ExAllocatePool(PagedPool, retLen + sizeof(RTL_PROCESS_MODULES));
+        if (!SystemMoudles) return 0;
+
+        memset(SystemMoudles, 0, retLen + sizeof(RTL_PROCESS_MODULES));
+
+        status = ZwQuerySystemInformation(SystemModuleInformation, SystemMoudles, retLen + sizeof(RTL_PROCESS_MODULES), &retLen);
+
+        if (!NT_SUCCESS(status))
+        {
+            ExFreePool(SystemMoudles);
+            return 0;
+        }
+
+        isAllocate = TRUE;
+    }
+
+    PUCHAR kernelModuleName = NULL;
+    ULONG_PTR moudleBase = 0;
+
+    do
+    {
+        if (_stricmp((const char*)moduleName, "ntoskrnl.exe") == 0 || _stricmp((const char*)moduleName, "ntkrnlpa.exe") == 0)
+        {
+            PRTL_PROCESS_MODULE_INFORMATION moudleInfo = &SystemMoudles->Modules[0];
+            moudleBase = (ULONG_PTR)moudleInfo->ImageBase;
+            if (moduleSize) *moduleSize = moudleInfo->ImageSize;
+
+            break;
+        }
+
+        kernelModuleName = (PUCHAR)ExAllocatePool(PagedPool, strlen((const char*)moduleName) + 1);
+
+        if (nullptr == kernelModuleName) {
+            break;
+        }
+
+        memset(kernelModuleName, 0, strlen((const char*)moduleName) + 1);
+        memcpy(kernelModuleName, moduleName, strlen((const char*)moduleName));
+        _strlwr((char*)kernelModuleName); // 转小写比较
+
+        for (ULONG i = 0; i < SystemMoudles->NumberOfModules; i++)
+        {
+            PRTL_PROCESS_MODULE_INFORMATION moudleInfo = &SystemMoudles->Modules[i];
+
+            PUCHAR pathName = (PUCHAR)_strlwr((char*)moudleInfo->FullPathName);
+
+            // 包含关系判断
+            if (strstr((const char*)pathName, (const char*)kernelModuleName))
+            {
+                moudleBase = (ULONG_PTR)moudleInfo->ImageBase;
+                if (moduleSize) *moduleSize = moudleInfo->ImageSize;
+                break;
+            }
+        }
+
+    } while (false);
+
+    if (kernelModuleName)
+    {
+        ExFreePool(kernelModuleName);
+    }
+
+    if (isAllocate)
+    {
+        ExFreePool(SystemMoudles);
+    }
+
+    return moudleBase;
+}
+
+DWORD 
+WINAPI
+GetUserCr3Offset()
+{
+    RTL_OSVERSIONINFOW Version = { 0 };
+    RtlGetVersion(&Version);
+
+    switch (Version.dwBuildNumber)
+    {
+    case WINDOWS_7:
+        return 0x0;
+    case WINDOWS_7_SP1:
+        return 0x0;
+    case WINDOWS_10_1803:
+        return 0x0278;
+    case WINDOWS_10_1809:
+        return 0x0278;
+    case WINDOWS_10_1903:
+        return 0x0280;
+    case WINDOWS_10_1909:
+        return 0x0280;
+    case WINDOWS_10_2004:
+        return 0x0388;
+    case WINDOWS_10_20H2:
+        return 0x0388;
+    case WINDOWS_10_21H1:
+        return 0x0388;
+    default:
+        return 0x0388;
+    }
+}
