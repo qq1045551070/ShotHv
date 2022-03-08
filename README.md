@@ -4,7 +4,7 @@
 
 目前实现的功能:
 1. R0\R3 EPT HOOK
-2. R3 隐写内存
+2. R0\R3 隐写内存
 3. Anti Hypervisor Check
 
 已在 Win7、Win10 1809、Win 1909 真机环境测试。
